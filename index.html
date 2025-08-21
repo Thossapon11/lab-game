@@ -10,7 +10,7 @@
         body { font-family: 'Kanit', sans-serif; }
         
         .beaker {
-            background: linear-gradient(to bottom, transparent 0%, transparent 70%, #3b82f6 70%, #1d4ed8 100%);
+            background: linear-gradient(to bottom, transparent 0%, transparent 70%, #fff 70%, #fff 100%);
             border: 3px solid #374151;
             border-radius: 0 0 50px 50px;
             position: relative;
@@ -41,35 +41,26 @@
         }
         
         .powder {
-            background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
             border-radius: 50%;
-            animation: dissolve 2s ease-in-out;
+            position: absolute;
+            animation: fall 1.5s forwards;
         }
         
-        @keyframes dissolve {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(0.8); }
-            100% { opacity: 0; transform: scale(0.3); }
-        }
-        
-        .bubble {
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            animation: bubble 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes bubble {
-            0% { transform: translateY(0) scale(1); opacity: 0.7; }
-            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
-            100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+        @keyframes fall {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(120px); opacity: 0; }
         }
         
         .stirring-rod {
             background: linear-gradient(to bottom, #8b5cf6 0%, #7c3aed 100%);
             border-radius: 50px;
-            transform-origin: bottom center;
-            transition: transform 0.3s ease;
-            transform: rotate(0deg);
+            transform-origin: center center;
+            transition: all 0.5s ease;
+            position: absolute;
+            width: 2px;
+            height: 96px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
         }
         
         .stirring-rod.active {
@@ -77,9 +68,9 @@
         }
         
         @keyframes stir {
-            0% { transform: rotate(-10deg); }
-            50% { transform: rotate(10deg); }
-            100% { transform: rotate(-10deg); }
+            0% { transform: translateX(-50%) translateY(0) rotate(-10deg); }
+            50% { transform: translateX(-50%) translateY(0) rotate(10deg); }
+            100% { transform: translateX(-50%) translateY(0) rotate(-10deg); }
         }
     </style>
 </head>
@@ -285,7 +276,6 @@
                                     <div class="beaker w-32 h-40 mx-auto mb-4 relative">
                                         <div id="solution-level" class="solution bg-blue-200" style="height: 30%;"></div>
                                         <div id="powder-particles" class="absolute inset-0"></div>
-                                        <div id="bubbles-container" class="absolute inset-0"></div>
                                         
                                         <div id="stirring-rod" class="stirring-rod absolute w-2 h-24 left-1/2 transform -translate-x-1/2 -top-4"></div>
                                     </div>
@@ -532,18 +522,15 @@
             document.getElementById('display-volume').textContent = `${compound.volume} mL`;
             document.getElementById('compound-details').textContent = `${selectedCompound} มีมวลโมเลกุล = ${compound.mw} g/mol`;
             
-            // Update calc section inputs
             document.getElementById('volume-input').value = compound.volume;
             document.getElementById('volume-liters').value = (compound.volume / 1000).toFixed(3);
             document.getElementById('molarity-input').value = compound.molarity;
             document.getElementById('volume-for-moles').value = (compound.volume / 1000).toFixed(3);
             document.getElementById('mw-input').value = compound.mw;
 
-            // Recalculate and update the mass value for weighing step
             correctMass = compound.molarity * (compound.volume / 1000) * compound.mw;
             document.getElementById('required-mass').textContent = correctMass.toFixed(2);
             
-            // Reset weighing simulation
             currentMass = 0;
             document.getElementById('scale-display').textContent = '0.00 g';
             document.getElementById('weighing-progress').style.width = '0%';
@@ -646,73 +633,76 @@
             }
         }
         
-        function stirSolution() {
-            const stirringRod = document.getElementById('stirring-rod');
-            const dissolvingStatus = document.getElementById('dissolving-status');
-            const bubblesContainer = document.getElementById('bubbles-container');
+        function addSalt() {
             const powderParticles = document.getElementById('powder-particles');
-            
-            stirringRod.classList.add('active');
-            dissolvingStatus.textContent = 'กำลังคนสาร...';
-            
+            const compound = compounds[selectedCompound];
             powderParticles.innerHTML = '';
-            for (let i = 0; i < 10; i++) {
+            
+            for (let i = 0; i < 15; i++) {
                 const particle = document.createElement('div');
                 particle.classList.add('powder');
-                particle.style.width = `${Math.random() * 8 + 4}px`;
+                particle.style.background = compound.powderColor;
+                particle.style.width = `${Math.random() * 10 + 5}px`;
                 particle.style.height = particle.style.width;
-                particle.style.left = `${Math.random() * 80 + 10}%`;
-                particle.style.bottom = `${Math.random() * 30 + 5}%`;
+                
+                particle.style.left = `${Math.random() * 60 + 20}%`;
+                particle.style.top = `${Math.random() * 10 + 20}%`; 
+
+                const animationName = `fall-${Date.now()}-${i}`;
+                const keyframes = `
+                    @keyframes ${animationName} {
+                        0% { transform: translateY(0); opacity: 1; }
+                        100% { transform: translateY(120px); opacity: 0; }
+                    }
+                `;
+                const styleSheet = document.createElement("style");
+                styleSheet.innerHTML = keyframes;
+                document.head.appendChild(styleSheet);
+                particle.style.animation = `${animationName} 1.5s forwards`;
+
                 powderParticles.appendChild(particle);
             }
             
-            bubblesContainer.innerHTML = '';
-            for (let i = 0; i < 5; i++) {
-                const bubble = document.createElement('div');
-                bubble.classList.add('bubble');
-                bubble.style.width = `${Math.random() * 8 + 4}px`;
-                bubble.style.height = bubble.style.width;
-                bubble.style.left = `${Math.random() * 80 + 10}%`;
-                bubble.style.bottom = `${Math.random() * 10 + 5}%`;
-                bubblesContainer.appendChild(bubble);
-            }
+            document.getElementById('dissolving-status').textContent = 'เติมผงสารแล้ว!';
+        }
+        
+        function stirSolution() {
+            const stirringRod = document.getElementById('stirring-rod');
+            const dissolvingStatus = document.getElementById('dissolving-status');
+            const powderParticles = document.getElementById('powder-particles');
+            
+            stirringRod.style.top = '70%'; 
+            stirringRod.classList.add('active');
+
+            dissolvingStatus.textContent = 'กำลังคนสาร...';
+            
+            powderParticles.style.transition = 'opacity 2s ease-in-out';
+            powderParticles.style.opacity = '0';
             
             setTimeout(() => {
                 stirringRod.classList.remove('active');
+                stirringRod.style.top = '-4rem'; 
                 dissolvingStatus.textContent = 'สารละลายเป็นเนื้อเดียวกันแล้ว!';
                 powderParticles.innerHTML = '';
-                bubblesContainer.innerHTML = '';
+                powderParticles.style.opacity = '1';
                 document.getElementById('next-btn-1').classList.remove('hidden');
             }, 2000);
         }
 
         function addWater() {
             const solutionLevel = document.getElementById('solution-level');
+            const compound = compounds[selectedCompound];
             let currentHeight = parseInt(solutionLevel.style.height);
             if (currentHeight < 70) {
                 currentHeight += 10;
                 solutionLevel.style.height = `${currentHeight}%`;
+                solutionLevel.style.backgroundColor = compound.color; // Set solution color
                 document.getElementById('dissolving-status').textContent = `เติมน้ำเพิ่ม... (${currentHeight}%)`;
             } else {
                 document.getElementById('dissolving-status').textContent = 'ไม่สามารถเติมน้ำในบีกเกอร์ได้อีกแล้ว!';
             }
         }
         
-        function addSalt() {
-            const powderParticles = document.getElementById('powder-particles');
-            powderParticles.innerHTML = '';
-            for (let i = 0; i < 15; i++) {
-                const particle = document.createElement('div');
-                particle.classList.add('powder');
-                particle.style.width = `${Math.random() * 10 + 5}px`;
-                particle.style.height = particle.style.width;
-                particle.style.left = `${Math.random() * 80 + 10}%`;
-                particle.style.bottom = `${Math.random() * 10 + 5}%`;
-                powderParticles.appendChild(particle);
-            }
-            document.getElementById('dissolving-status').textContent = 'เติมผงสารแล้ว!';
-        }
-
         function checkAnswer(questionNum) {
             const answer = document.querySelector(`input[name="q${questionNum}"]:checked`);
             const feedbackEl = document.getElementById(`q${questionNum}-feedback`);
@@ -758,15 +748,18 @@
 
         let finalVolume = 0;
         function transferSolution() {
+            const compound = compounds[selectedCompound];
             document.getElementById('final-solution').style.height = '30%';
-            document.getElementById('current-volume').textContent = (compounds[selectedCompound].volume * 0.3).toFixed(0);
+            document.getElementById('final-solution').style.backgroundColor = compound.color;
+            document.getElementById('current-volume').textContent = (compound.volume * 0.3).toFixed(0);
             document.getElementById('final-status').textContent = 'ย้ายสารละลายลงใน Volumetric Flask แล้ว';
         }
 
         function addMoreWater() {
             const targetVolume = compounds[selectedCompound].volume;
             let currentVolume = parseFloat(document.getElementById('current-volume').textContent);
-            let increment = Math.random() * 50 + 20; // Add random volume
+            let increment = Math.random() * 50 + 20; 
+            const compound = compounds[selectedCompound];
             
             if (currentVolume < targetVolume) {
                 currentVolume += increment;
@@ -775,6 +768,7 @@
                 }
                 const heightPercentage = (currentVolume / targetVolume) * 100;
                 document.getElementById('final-solution').style.height = `${heightPercentage}%`;
+                document.getElementById('final-solution').style.backgroundColor = compound.color;
                 document.getElementById('current-volume').textContent = currentVolume.toFixed(0);
                 document.getElementById('final-status').textContent = `กำลังเติมน้ำ...`;
             } else {
@@ -822,7 +816,6 @@
             document.getElementById('step-1').classList.remove('hidden');
             updateProblem();
             
-            // Reset all buttons and feedback
             document.getElementById('next-btn-calc').classList.add('hidden');
             document.getElementById('next-btn-weighing').classList.add('hidden');
             document.getElementById('next-btn-1').classList.add('hidden');
@@ -833,7 +826,6 @@
             document.getElementById('meniscus-line').style.opacity = '0';
         }
 
-        // Initial setup on page load
         document.addEventListener('DOMContentLoaded', () => {
             updateProblem();
             resetGame();
