@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมเตรียมสารละลาย - ห้องปฏิบัติการเสมือน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; }
+        
+        .beaker {
+            background: linear-gradient(to bottom, transparent 0%, transparent 70%, #3b82f6 70%, #1d4ed8 100%);
+            border: 3px solid #374151;
+            border-radius: 0 0 50px 50px;
+            position: relative;
+            background: #fff;
+        }
+        
+        .solution {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 0 0 47px 47px;
+            transition: all 0.5s ease;
+        }
+        
+        .measuring-cylinder {
+            background: linear-gradient(to right, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
+            border: 2px solid #374151;
+            border-radius: 10px 10px 5px 5px;
+            position: relative;
+        }
+        
+        .scale-mark {
+            border-top: 1px solid #6b7280;
+            width: 20px;
+            position: absolute;
+            right: 0;
+        }
+        
+        .powder {
+            background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 50%;
+            animation: dissolve 2s ease-in-out;
+        }
+        
+        @keyframes dissolve {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.8); }
+            100% { opacity: 0; transform: scale(0.3); }
+        }
+        
+        .bubble {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: bubble 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes bubble {
+            0% { transform: translateY(0) scale(1); opacity: 0.7; }
+            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+        }
+        
+        .stirring-rod {
+            background: linear-gradient(to bottom, #8b5cf6 0%, #7c3aed 100%);
+            border-radius: 50px;
+            transform-origin: bottom center;
+            transition: transform 0.3s ease;
+            transform: rotate(0deg);
+        }
+        
+        .stirring-rod.active {
+            animation: stir 1s ease-in-out infinite;
+        }
+        
+        @keyframes stir {
+            0% { transform: rotate(-10deg); }
+            50% { transform: rotate(10deg); }
+            100% { transform: rotate(-10deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-800 mb-2">🧪 ห้องปฏิบัติการเสมือน</h1>
+            <p class="text-lg text-gray-600">เกมจำลองการเตรียมสารละลาย - รูปแบบคำถาม</p>
+        </div>
+
+        <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-indigo-600 p-4">
+                <div class="flex justify-between items-center text-white mb-2">
+                    <span class="font-semibold">ความคืบหน้า</span>
+                    <span id="progress-text">ขั้นตอนที่ 1/5</span>
+                </div>
+                <div class="w-full bg-indigo-400 rounded-full h-3">
+                    <div id="progress-bar" class="bg-yellow-400 h-3 rounded-full transition-all duration-500" style="width: 20%"></div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div id="step-1" class="step-content">
+                    <h2 class="text-2xl font-bold text-indigo-800 mb-4">📋 ขั้นตอนที่ 1: โจทย์ปัญหา</h2>
+                    <div class="bg-blue-50 p-6 rounded-xl mb-6">
+                        <h3 class="text-xl font-semibold mb-4">🎯 โจทย์: เตรียมสารละลาย</h3>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-2">เลือกโจทย์</label>
+                            <select id="compound-select" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500" onchange="updateProblem()">
+                                <option value="NaCl">โจทย์ที่ 1: เตรียม NaCl 0.5 M ปริมาตร 250 mL</option>
+                                <option value="KMnO4">โจทย์ที่ 2: เตรียม KMnO4 0.2 M ปริมาตร 500 mL</option>
+                                <option value="CuSO4">โจทย์ที่ 3: เตรียม CuSO4·5H2O 0.3 M ปริมาตร 300 mL</option>
+                                <option value="NaOH">โจทย์ที่ 4: เตรียม NaOH 0.1 M ปริมาตร 1000 mL</option>
+                                <option value="HCl">โจทย์ที่ 5: เตรียม HCl 0.25 M ปริมาตร 400 mL</option>
+                            </select>
+                        </div>
+                        
+                        <div id="problem-display" class="grid md:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white p-4 rounded-lg border-2 border-blue-300">
+                                <h4 class="font-semibold text-blue-800 mb-3">📝 โจทย์ที่กำหนด</h4>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span>สารประกอบ:</span>
+                                        <span id="display-compound" class="font-semibold">NaCl</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>ความเข้มข้นที่ต้องการ:</span>
+                                        <span id="display-molarity" class="font-semibold">0.5 M</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>ปริมาตรที่ต้องการ:</span>
+                                        <span id="display-volume" class="font-semibold">250 mL</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-300">
+                                <h4 class="font-semibold text-yellow-800 mb-3">📚 ข้อมูลที่ให้</h4>
+                                <div id="compound-info">
+                                    <p class="text-sm"><span id="compound-details">NaCl มีมวลโมเลกุล = 58.44 g/mol</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div></div>
+                            <button onclick="nextStep(2)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
+                                ไปขั้นตอนคำนวณ 🧮
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-2" class="step-content hidden">
+                    <h2 class="text-2xl font-bold text-indigo-800 mb-4">🧮 ขั้นตอนที่ 2: การคำนวณ</h2>
+                    <div class="bg-green-50 p-6 rounded-xl mb-6">
+                        <h3 class="text-xl font-semibold mb-4">📐 คำนวณมวลสารที่ต้องใช้</h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-white p-4 rounded-lg">
+                                <h4 class="font-semibold mb-3">📝 ข้อมูลจากโจทย์</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span>สารประกอบ:</span>
+                                        <span id="calc-compound" class="font-semibold">NaCl</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>ความเข้มข้น (M):</span>
+                                        <span id="calc-molarity" class="font-semibold">0.5</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>ปริมาตร (mL):</span>
+                                        <span id="calc-volume" class="font-semibold">250</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>มวลโมเลกุล (g/mol):</span>
+                                        <span id="calc-mw" class="font-semibold">58.44</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-3">🧮 เติมตัวเลขในช่องว่าง</h4>
+                                <div class="space-y-4 text-sm">
+                                    <div class="bg-white p-3 rounded border">
+                                        <p class="mb-2">1. แปลงปริมาตรเป็นลิตร:</p>
+                                        <p>
+                                            <input type="number" id="volume-input" class="inline-block w-20 p-1 border rounded text-center" step="0.001" placeholder=""> mL ÷ 1000 = 
+                                            <input type="number" id="volume-liters" class="inline-block w-20 p-1 border rounded text-center" step="0.001" placeholder=""> L
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="bg-white p-3 rounded border">
+                                        <p class="mb-2">2. คำนวณจำนวนโมล:</p>
+                                        <p>
+                                            <input type="number" id="molarity-input" class="inline-block w-20 p-1 border rounded text-center" step="0.1" placeholder=""> × 
+                                            <input type="number" id="volume-for-moles" class="inline-block w-20 p-1 border rounded text-center" step="0.001" placeholder=""> = 
+                                            <input type="number" id="moles-calc" class="inline-block w-20 p-1 border rounded text-center" step="0.0001" placeholder=""> mol
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="bg-white p-3 rounded border">
+                                        <p class="mb-2">3. คำนวณมวลสาร:</p>
+                                        <p>
+                                            <input type="number" id="moles-for-mass" class="inline-block w-20 p-1 border rounded text-center" step="0.0001" placeholder=""> × 
+                                            <input type="number" id="mw-input" class="inline-block w-24 p-1 border rounded text-center" step="0.01" placeholder=""> = 
+                                            <input type="number" id="mass-calc" class="inline-block w-24 p-1 border rounded text-center" step="0.01" placeholder=""> g
+                                        </p>
+                                    </div>
+                                    
+                                    <button onclick="checkCalculation()" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold transition-colors">
+                                        ตรวจคำตอบ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="calculation-feedback" class="mt-4 hidden"></div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <button onclick="previousStep(1)" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                            ← ย้อนกลับ
+                        </button>
+                        <button id="next-btn-calc" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors hidden" onclick="nextStep(3)">
+                            ไปขั้นตอนชั่งสาร ⚖️
+                        </button>
+                    </div>
+                </div>
+
+                <div id="step-3" class="step-content hidden">
+                    <h2 class="text-2xl font-bold text-indigo-800 mb-4">⚖️ ขั้นตอนที่ 3: ชั่งสาร</h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-8 mb-6">
+                        <div>
+                            <div class="bg-gray-100 p-6 rounded-xl">
+                                <h3 class="text-lg font-semibold mb-4">เครื่องชั่งดิจิตอล</h3>
+                                <div class="bg-black text-green-400 p-4 rounded-lg font-mono text-2xl text-center mb-4">
+                                    <span id="scale-display">0.00 g</span>
+                                </div>
+                                <div class="text-center mb-4">
+                                    <div class="inline-block bg-gray-300 w-32 h-32 rounded-lg relative">
+                                        <div id="powder-on-scale" class="absolute inset-4 bg-yellow-200 rounded-lg opacity-0 transition-opacity duration-500"></div>
+                                    </div>
+                                </div>
+                                <button onclick="addPowder()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-semibold transition-colors">
+                                    เติมผงสาร
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="bg-blue-50 p-6 rounded-xl">
+                                <h3 class="text-lg font-semibold mb-4">ปริมาณที่ต้องการ</h3>
+                                <div class="text-3xl font-bold text-indigo-600 mb-2">
+                                    <span id="required-mass">0.00</span> g
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                                    <div id="weighing-progress" class="bg-green-500 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <div id="weighing-status" class="text-center text-gray-600">เริ่มชั่งสาร</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <button onclick="previousStep(2)" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                            ← ย้อนกลับ
+                        </button>
+                        <button id="next-btn-weighing" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors hidden" onclick="nextStep(4)">
+                            ไปขั้นตอนละลายสาร 🌊
+                        </button>
+                    </div>
+                </div>
+
+                <div id="step-4" class="step-content hidden">
+                    <h2 class="text-2xl font-bold text-indigo-800 mb-4">🌊 ขั้นตอนที่ 4: ละลายสาร</h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-8 mb-6">
+                        <div>
+                            <div class="bg-gray-100 p-6 rounded-xl">
+                                <h3 class="text-lg font-semibold mb-4">🧪 การจำลองการละลายสาร</h3>
+                                <div class="text-sm text-gray-600 mb-4 p-3 bg-blue-50 rounded-lg">
+                                    💡 <strong>คำแนะนำ:</strong> ลองกดปุ่มต่างๆ เพื่อดูลำดับการเตรียมสารละลาย<br>
+                                    จากนั้นตอบคำถามด้านขวาตามที่สังเกตได้
+                                </div>
+                                <div class="relative">
+                                    <div class="beaker w-32 h-40 mx-auto mb-4 relative">
+                                        <div id="solution-level" class="solution bg-blue-200" style="height: 30%;"></div>
+                                        <div id="powder-particles" class="absolute inset-0"></div>
+                                        <div id="bubbles-container" class="absolute inset-0"></div>
+                                        
+                                        <div id="stirring-rod" class="stirring-rod absolute w-2 h-24 left-1/2 transform -translate-x-1/2 -top-4"></div>
+                                    </div>
+                                    
+                                    <div id="dissolving-status" class="text-center text-gray-600 mb-4">เริ่มละลายสาร</div>
+                                    
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <button onclick="stirSolution()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                            🥄 คน
+                                        </button>
+                                        <button onclick="addWater()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                            💧 เติมน้ำ
+                                        </button>
+                                        <button onclick="addSalt()" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                            🧂 เติมสาร
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="bg-orange-50 p-6 rounded-xl">
+                                <h4 class="text-lg font-semibold text-orange-800 mb-3">❓ คำถาม: ลำดับการเตรียมสารละลาย</h4>
+                                <p class="mb-4">จากการจำลองการละลายสารข้างซ้าย ลำดับที่ถูกต้องในการเตรียมสารละลายคือข้อใด?</p>
+                                <div class="space-y-2">
+                                    <label class="flex items-center cursor-pointer hover:bg-orange-100 p-2 rounded">
+                                        <input type="radio" name="q1" value="a" class="mr-2">
+                                        <span>A) เติมน้ำ → เติมสาร → คน → ปรับปริมาตร</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer hover:bg-orange-100 p-2 rounded">
+                                        <input type="radio" name="q1" value="b" class="mr-2">
+                                        <span>B) เติมสาร → เติมน้ำ → คน → ปรับปริมาตร</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer hover:bg-orange-100 p-2 rounded">
+                                        <input type="radio" name="q1" value="c" class="mr-2">
+                                        <span>C) เติมน้ำครบปริมาตร → เติมสาร → คน</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer hover:bg-orange-100 p-2 rounded">
+                                        <input type="radio" name="q1" value="d" class="mr-2">
+                                        <span>D) เติมสาร → ปรับปริมาตร → คน</span>
+                                    </label>
+                                </div>
+                                <div class="mt-4">
+                                    <button onclick="checkAnswer(1)" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                                        ตรวจคำตอบ
+                                    </button>
+                                </div>
+                                <div id="q1-feedback" class="mt-4 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <button onclick="previousStep(3)" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                            ← ย้อนกลับ
+                        </button>
+                        <button id="next-btn-1" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors hidden" onclick="nextStep(5)">
+                            ไปขั้นตอนปรับปริมาตร 📏
+                        </button>
+                    </div>
+                </div>
+
+                <div id="step-5" class="step-content hidden">
+                    <h2 class="text-2xl font-bold text-indigo-800 mb-4">📏 ขั้นตอนที่ 5: ปรับปริมาตร</h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-8 mb-6">
+                        <div>
+                            <div class="bg-gray-100 p-6 rounded-xl">
+                                <h3 class="text-lg font-semibold mb-4">🧪 การจำลองการปรับปริมาตร</h3>
+                                <div class="text-sm text-gray-600 mb-4 p-3 bg-blue-50 rounded-lg">
+                                    💡 <strong>คำแนะนำ:</strong> ลองกดปุ่มต่างๆ เพื่อดูขั้นตอนการปรับปริมาตร<br>
+                                    จากนั้นตอบคำถามด้านขวาตามที่สังเกตได้
+                                </div>
+                                <div class="relative">
+                                    <div class="measuring-cylinder w-24 h-48 mx-auto mb-4 relative">
+                                        <div id="final-solution" class="solution bg-blue-200" style="height: 0%;"></div>
+                                        
+                                        <div class="scale-mark" style="top: 20%;"></div>
+                                        <div class="scale-mark" style="top: 40%;"></div>
+                                        <div class="scale-mark" style="top: 60%;"></div>
+                                        <div class="scale-mark" style="top: 80%;"></div>
+                                        
+                                        <div class="absolute right-6 text-xs" style="top: 18%;">
+                                            <span id="target-volume-label">250</span> mL
+                                        </div>
+                                        <div class="absolute right-6 text-xs" style="top: 38%;">200 mL</div>
+                                        <div class="absolute right-6 text-xs" style="top: 58%;">150 mL</div>
+                                        <div class="absolute right-6 text-xs" style="top: 78%;">100 mL</div>
+                                        
+                                        <div id="meniscus-line" class="absolute w-full border-t-2 border-red-500 opacity-0 transition-opacity duration-500" style="top: 20%;"></div>
+                                    </div>
+                                    
+                                    <div class="text-center mb-2">
+                                        <div class="text-lg font-semibold">
+                                            ปริมาตรปัจจุบัน: <span id="current-volume">0</span> mL
+                                        </div>
+                                        <div class="text-sm text-gray-600">
+                                            เป้าหมาย: <span id="target-volume-display">250</span> mL
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="final-status" class="text-center text-gray-600 mb-4">เริ่มปรับปริมาตร</div>
+                                    
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <button onclick="transferSolution()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                            🔄 ย้ายสาร
+                                        </button>
+                                        <button onclick="addMoreWater()" class="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                            💧 เติมน้ำ
+                                        </button>
+                                        <button onclick="finalMix()" class="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                            🌀 คนผสม
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="bg-orange-50 p-6 rounded-xl">
+                                <h4 class="text-lg font-semibold text-orange-800 mb-3">❓ คำถาม: Volumetric Flask</h4>
+                                <p class="mb-4">จากการจำลองข้างซ้าย เหตุใดจึงต้องใช้ Volumetric Flask ในการเตรียมสารละลาย?</p>
+                                <div class="space-y-2">
+                                    <label class="flex items-center cursor-pointer hover:bg-orange-100 p-2 rounded">
+                                        <input type="radio" name="q2" value="a" class="mr-2">
+                                        <span>A) เพื่อให้ปริมาตรแม่นยำที่สุด</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer hover:bg-orange-100 p-2 rounded">
+                                        <input type="radio" name="q2" value="b" class="mr-2">
+                                        <span>B) เพื่อให้คนสารได้ดีกว่า</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer hover:bg-orange-100 p-2 rounded">
+                                        <input type="radio" name="q2" value="c" class="mr-2">
+                                        <span>C) เพื่อให้สารละลายเร็วกว่า</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer hover:bg-orange-100 p-2 rounded">
+                                        <input type="radio" name="q2" value="d" class="mr-2">
+                                        <span>D) เพื่อประหยัดสารเคมี</span>
+                                    </label>
+                                </div>
+                                <div class="mt-4">
+                                    <button onclick="checkAnswer(2)" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                                        ตรวจคำตอบ
+                                    </button>
+                                </div>
+                                <div id="q2-feedback" class="mt-4 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <button onclick="previousStep(4)" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                            ← ย้อนกลับ
+                        </button>
+                        <button id="next-btn-2" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors hidden" onclick="showCompletion()">
+                            เสร็จสิ้น 🎉
+                        </button>
+                    </div>
+                </div>
+
+                <div id="completion" class="step-content hidden">
+                    <div class="text-center py-12">
+                        <div class="text-6xl mb-4">🎉</div>
+                        <h2 class="text-3xl font-bold text-green-600 mb-4">เยี่ยมมาก! เตรียมสารละลายสำเร็จ</h2>
+                        <div class="bg-green-50 p-6 rounded-xl max-w-md mx-auto mb-6">
+                            <h3 class="text-xl font-semibold mb-4">ผลลัพธ์</h3>
+                            <div id="final-results" class="space-y-2 text-left"></div>
+                            <div id="score-display" class="mt-4 p-4 bg-yellow-100 rounded-lg">
+                                <div class="text-lg font-semibold">คะแนนรวม: <span id="total-score">0</span>/2</div>
+                            </div>
+                        </div>
+                        <button onclick="resetGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
+                            🔄 เริ่มใหม่
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const compounds = {
+            'NaCl': {
+                name: 'โซเดียมคลอไรด์',
+                mw: 58.44,
+                molarity: 0.5,
+                volume: 250,
+                color: '#3b82f6',
+                powderColor: '#fbbf24',
+                description: 'เกลือแกง - ใช้ในการปรุงอาหารและอุตสาหกรรม'
+            },
+            'KMnO4': {
+                name: 'โปแตสเซียมเปอร์แมงกาเนต',
+                mw: 158.03,
+                molarity: 0.2,
+                volume: 500,
+                color: '#7c2d92',
+                powderColor: '#4c1d95',
+                description: 'สารออกซิไดซ์ - ใช้ฆ่าเชื้อและในการวิเคราะห์'
+            },
+            'CuSO4': {
+                name: 'คอปเปอร์ซัลเฟต',
+                mw: 249.68,
+                molarity: 0.3,
+                volume: 300,
+                color: '#0ea5e9',
+                powderColor: '#0284c7',
+                description: 'เกลือทองแดง - ใช้เป็นสารฆ่าเชื้อราและปุ๋ย'
+            },
+            'NaOH': {
+                name: 'โซเดียมไฮดรอกไซด์',
+                mw: 40.00,
+                molarity: 0.1,
+                volume: 1000,
+                color: '#6b7280',
+                powderColor: '#f3f4f6',
+                description: 'โซดาไฟ - ใช้ในอุตสาหกรรมสบู่และกระดาษ'
+            },
+            'HCl': {
+                name: 'กรดไฮโดรคลอริก',
+                mw: 36.46,
+                molarity: 0.25,
+                volume: 400,
+                color: '#fbbf24',
+                powderColor: '#f59e0b',
+                description: 'กรดเข้มข้น - ใช้ในอุตสาหกรรมและห้องปฏิบัติการ'
+            }
+        };
+
+        let currentStep = 1;
+        let selectedCompound = 'NaCl';
+        let correctMass = 0;
+        let currentMass = 0;
+        let score = 0;
+        let q1Correct = false;
+        let q2Correct = false;
+
+        const totalSteps = 5;
+
+        function updateProblem() {
+            selectedCompound = document.getElementById('compound-select').value;
+            const compound = compounds[selectedCompound];
+            document.getElementById('display-compound').textContent = selectedCompound;
+            document.getElementById('display-molarity').textContent = `${compound.molarity} M`;
+            document.getElementById('display-volume').textContent = `${compound.volume} mL`;
+            document.getElementById('compound-details').textContent = `${selectedCompound} มีมวลโมเลกุล = ${compound.mw} g/mol`;
+            
+            // Update calc section inputs
+            document.getElementById('volume-input').value = compound.volume;
+            document.getElementById('volume-liters').value = (compound.volume / 1000).toFixed(3);
+            document.getElementById('molarity-input').value = compound.molarity;
+            document.getElementById('volume-for-moles').value = (compound.volume / 1000).toFixed(3);
+            document.getElementById('mw-input').value = compound.mw;
+
+            // Recalculate and update the mass value for weighing step
+            correctMass = compound.molarity * (compound.volume / 1000) * compound.mw;
+            document.getElementById('required-mass').textContent = correctMass.toFixed(2);
+            
+            // Reset weighing simulation
+            currentMass = 0;
+            document.getElementById('scale-display').textContent = '0.00 g';
+            document.getElementById('weighing-progress').style.width = '0%';
+            document.getElementById('weighing-status').textContent = 'เริ่มชั่งสาร';
+            document.getElementById('powder-on-scale').style.opacity = '0';
+        }
+
+        function nextStep(step) {
+            document.getElementById(`step-${currentStep}`).classList.add('hidden');
+            currentStep = step;
+            document.getElementById(`step-${currentStep}`).classList.remove('hidden');
+            
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').textContent = `ขั้นตอนที่ ${currentStep}/${totalSteps}`;
+            
+            if (currentStep === 3) {
+                document.getElementById('required-mass').textContent = correctMass.toFixed(2);
+            }
+            if (currentStep === 5) {
+                const compound = compounds[selectedCompound];
+                document.getElementById('target-volume-label').textContent = compound.volume;
+                document.getElementById('target-volume-display').textContent = compound.volume;
+            }
+        }
+
+        function previousStep(step) {
+            document.getElementById(`step-${currentStep}`).classList.add('hidden');
+            currentStep = step;
+            document.getElementById(`step-${currentStep}`).classList.remove('hidden');
+            
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').textContent = `ขั้นตอนที่ ${currentStep}/${totalSteps}`;
+        }
+        
+        function checkCalculation() {
+            const compound = compounds[selectedCompound];
+            const volumeLiters = compound.volume / 1000;
+            const moles = compound.molarity * volumeLiters;
+            const mass = moles * compound.mw;
+
+            const userVolumeLiters = parseFloat(document.getElementById('volume-liters').value);
+            const userMoles = parseFloat(document.getElementById('moles-calc').value);
+            const userMass = parseFloat(document.getElementById('mass-calc').value);
+
+            const tolerance = 0.01;
+            let isCorrect = true;
+            let feedback = '';
+
+            if (Math.abs(userVolumeLiters - volumeLiters) > tolerance) {
+                isCorrect = false;
+                feedback += `1. การแปลงปริมาตรเป็นลิตรไม่ถูกต้อง ควรเป็น ${(volumeLiters).toFixed(3)} L <br>`;
+            }
+            if (Math.abs(userMoles - moles) > tolerance) {
+                isCorrect = false;
+                feedback += `2. จำนวนโมลที่คำนวณไม่ถูกต้อง ควรเป็น ${(moles).toFixed(4)} mol <br>`;
+            }
+            if (Math.abs(userMass - mass) > tolerance) {
+                isCorrect = false;
+                feedback += `3. มวลสารที่คำนวณไม่ถูกต้อง ควรเป็น ${(mass).toFixed(2)} g <br>`;
+            }
+
+            const feedbackEl = document.getElementById('calculation-feedback');
+            if (isCorrect) {
+                feedbackEl.innerHTML = '<span class="text-green-600 font-semibold">ถูกต้อง! ไปขั้นตอนต่อไปได้เลย</span>';
+                feedbackEl.classList.remove('hidden', 'text-red-600');
+                feedbackEl.classList.add('text-green-600');
+                document.getElementById('next-btn-calc').classList.remove('hidden');
+            } else {
+                feedbackEl.innerHTML = `<span class="text-red-600 font-semibold">คำตอบยังไม่ถูกต้อง:</span> <br>${feedback}`;
+                feedbackEl.classList.remove('hidden', 'text-green-600');
+                feedbackEl.classList.add('text-red-600');
+                document.getElementById('next-btn-calc').classList.add('hidden');
+            }
+        }
+
+        function addPowder() {
+            if (currentMass < correctMass) {
+                currentMass += Math.random() * 5 + 1;
+                if (currentMass > correctMass) {
+                    currentMass = correctMass + (Math.random() * 0.1);
+                }
+                
+                const progress = (currentMass / correctMass) * 100;
+                document.getElementById('scale-display').textContent = `${currentMass.toFixed(2)} g`;
+                document.getElementById('weighing-progress').style.width = `${progress}%`;
+                document.getElementById('powder-on-scale').style.opacity = '1';
+                
+                if (Math.abs(currentMass - correctMass) <= 0.1) {
+                    document.getElementById('weighing-status').textContent = 'ชั่งได้ปริมาณที่ถูกต้องแล้ว!';
+                    document.getElementById('weighing-progress').classList.remove('bg-green-500');
+                    document.getElementById('weighing-progress').classList.add('bg-blue-500');
+                    document.getElementById('next-btn-weighing').classList.remove('hidden');
+                } else {
+                    document.getElementById('weighing-status').textContent = 'กำลังชั่งสาร...';
+                }
+            } else {
+                document.getElementById('weighing-status').textContent = 'ชั่งสารเสร็จสิ้นแล้ว';
+            }
+        }
+        
+        function stirSolution() {
+            const stirringRod = document.getElementById('stirring-rod');
+            const dissolvingStatus = document.getElementById('dissolving-status');
+            const bubblesContainer = document.getElementById('bubbles-container');
+            const powderParticles = document.getElementById('powder-particles');
+            
+            stirringRod.classList.add('active');
+            dissolvingStatus.textContent = 'กำลังคนสาร...';
+            
+            powderParticles.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('powder');
+                particle.style.width = `${Math.random() * 8 + 4}px`;
+                particle.style.height = particle.style.width;
+                particle.style.left = `${Math.random() * 80 + 10}%`;
+                particle.style.bottom = `${Math.random() * 30 + 5}%`;
+                powderParticles.appendChild(particle);
+            }
+            
+            bubblesContainer.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('bubble');
+                bubble.style.width = `${Math.random() * 8 + 4}px`;
+                bubble.style.height = bubble.style.width;
+                bubble.style.left = `${Math.random() * 80 + 10}%`;
+                bubble.style.bottom = `${Math.random() * 10 + 5}%`;
+                bubblesContainer.appendChild(bubble);
+            }
+            
+            setTimeout(() => {
+                stirringRod.classList.remove('active');
+                dissolvingStatus.textContent = 'สารละลายเป็นเนื้อเดียวกันแล้ว!';
+                powderParticles.innerHTML = '';
+                bubblesContainer.innerHTML = '';
+                document.getElementById('next-btn-1').classList.remove('hidden');
+            }, 2000);
+        }
+
+        function addWater() {
+            const solutionLevel = document.getElementById('solution-level');
+            let currentHeight = parseInt(solutionLevel.style.height);
+            if (currentHeight < 70) {
+                currentHeight += 10;
+                solutionLevel.style.height = `${currentHeight}%`;
+                document.getElementById('dissolving-status').textContent = `เติมน้ำเพิ่ม... (${currentHeight}%)`;
+            } else {
+                document.getElementById('dissolving-status').textContent = 'ไม่สามารถเติมน้ำในบีกเกอร์ได้อีกแล้ว!';
+            }
+        }
+        
+        function addSalt() {
+            const powderParticles = document.getElementById('powder-particles');
+            powderParticles.innerHTML = '';
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('powder');
+                particle.style.width = `${Math.random() * 10 + 5}px`;
+                particle.style.height = particle.style.width;
+                particle.style.left = `${Math.random() * 80 + 10}%`;
+                particle.style.bottom = `${Math.random() * 10 + 5}%`;
+                powderParticles.appendChild(particle);
+            }
+            document.getElementById('dissolving-status').textContent = 'เติมผงสารแล้ว!';
+        }
+
+        function checkAnswer(questionNum) {
+            const answer = document.querySelector(`input[name="q${questionNum}"]:checked`);
+            const feedbackEl = document.getElementById(`q${questionNum}-feedback`);
+            if (!answer) {
+                feedbackEl.innerHTML = '<span class="text-red-600">กรุณาเลือกคำตอบก่อน</span>';
+                feedbackEl.classList.remove('hidden');
+                return;
+            }
+            
+            if (questionNum === 1) {
+                if (answer.value === 'b') {
+                    feedbackEl.innerHTML = '<span class="text-green-600 font-semibold">ถูกต้อง!</span> <br>คำอธิบาย: ควรเติมสารก่อนแล้วจึงค่อยเติมน้ำเพื่อช่วยให้สารละลายได้ดีขึ้นก่อนที่จะคนให้เป็นเนื้อเดียวกัน';
+                    feedbackEl.classList.remove('hidden', 'text-red-600');
+                    feedbackEl.classList.add('text-green-600');
+                    if (!q1Correct) {
+                        q1Correct = true;
+                        score++;
+                    }
+                } else {
+                    feedbackEl.innerHTML = '<span class="text-red-600 font-semibold">ยังไม่ถูกต้อง</span> <br>ลองดูการจำลองอีกครั้งและคิดถึงขั้นตอนที่ถูกต้องในการเตรียมสารละลาย';
+                    feedbackEl.classList.remove('hidden', 'text-green-600');
+                    feedbackEl.classList.add('text-red-600');
+                    q1Correct = false;
+                }
+            } else if (questionNum === 2) {
+                if (answer.value === 'a') {
+                    feedbackEl.innerHTML = '<span class="text-green-600 font-semibold">ถูกต้อง!</span> <br>คำอธิบาย: Volumetric Flask ถูกออกแบบมาให้มีปริมาตรที่แม่นยำมากที่สุดสำหรับปริมาตรที่กำหนด';
+                    feedbackEl.classList.remove('hidden', 'text-red-600');
+                    feedbackEl.classList.add('text-green-600');
+                    if (!q2Correct) {
+                        q2Correct = true;
+                        score++;
+                    }
+                } else {
+                    feedbackEl.innerHTML = '<span class="text-red-600 font-semibold">ยังไม่ถูกต้อง</span> <br>ลองดูการจำลองอีกครั้งและคิดถึงวัตถุประสงค์หลักของอุปกรณ์นี้';
+                    feedbackEl.classList.remove('hidden', 'text-green-600');
+                    feedbackEl.classList.add('text-red-600');
+                    q2Correct = false;
+                }
+            }
+            
+        }
+
+        let finalVolume = 0;
+        function transferSolution() {
+            document.getElementById('final-solution').style.height = '30%';
+            document.getElementById('current-volume').textContent = (compounds[selectedCompound].volume * 0.3).toFixed(0);
+            document.getElementById('final-status').textContent = 'ย้ายสารละลายลงใน Volumetric Flask แล้ว';
+        }
+
+        function addMoreWater() {
+            const targetVolume = compounds[selectedCompound].volume;
+            let currentVolume = parseFloat(document.getElementById('current-volume').textContent);
+            let increment = Math.random() * 50 + 20; // Add random volume
+            
+            if (currentVolume < targetVolume) {
+                currentVolume += increment;
+                if (currentVolume > targetVolume) {
+                    currentVolume = targetVolume;
+                }
+                const heightPercentage = (currentVolume / targetVolume) * 100;
+                document.getElementById('final-solution').style.height = `${heightPercentage}%`;
+                document.getElementById('current-volume').textContent = currentVolume.toFixed(0);
+                document.getElementById('final-status').textContent = `กำลังเติมน้ำ...`;
+            } else {
+                document.getElementById('final-status').textContent = 'ไม่สามารถเติมน้ำเพิ่มได้แล้ว!';
+            }
+            
+            if (Math.abs(currentVolume - targetVolume) < 5) {
+                document.getElementById('meniscus-line').style.opacity = '1';
+                document.getElementById('final-status').textContent = 'เติมน้ำใกล้ถึงขีดบอกปริมาตรแล้ว!';
+            }
+            
+            if (Math.abs(currentVolume - targetVolume) < 1) {
+                document.getElementById('final-status').textContent = 'ปรับปริมาตรได้สมบูรณ์แล้ว!';
+                document.getElementById('next-btn-2').classList.remove('hidden');
+            }
+            
+            finalVolume = currentVolume;
+        }
+
+        function finalMix() {
+            document.getElementById('final-status').textContent = 'ผสมสารละลายขั้นสุดท้ายแล้ว!';
+        }
+
+        function showCompletion() {
+            document.getElementById(`step-${currentStep}`).classList.add('hidden');
+            document.getElementById('completion').classList.remove('hidden');
+            
+            const compound = compounds[selectedCompound];
+            const finalResults = document.getElementById('final-results');
+            finalResults.innerHTML = `
+                <p>✅ สารประกอบ: <span class="font-semibold">${selectedCompound}</span></p>
+                <p>✅ ความเข้มข้นที่เตรียมได้: <span class="font-semibold">${compound.molarity} M</span></p>
+                <p>✅ ปริมาตรสุดท้าย: <span class="font-semibold">${finalVolume.toFixed(2)} mL</span> (เป้าหมาย: ${compound.volume} mL)</p>
+            `;
+            
+            document.getElementById('total-score').textContent = score;
+        }
+
+        function resetGame() {
+            currentStep = 1;
+            score = 0;
+            q1Correct = false;
+            q2Correct = false;
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('step-1').classList.remove('hidden');
+            updateProblem();
+            
+            // Reset all buttons and feedback
+            document.getElementById('next-btn-calc').classList.add('hidden');
+            document.getElementById('next-btn-weighing').classList.add('hidden');
+            document.getElementById('next-btn-1').classList.add('hidden');
+            document.getElementById('next-btn-2').classList.add('hidden');
+            document.getElementById('calculation-feedback').classList.add('hidden');
+            document.getElementById('q1-feedback').classList.add('hidden');
+            document.getElementById('q2-feedback').classList.add('hidden');
+            document.getElementById('meniscus-line').style.opacity = '0';
+        }
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateProblem();
+            resetGame();
+        });
+    </script>
+</body>
+</html>
