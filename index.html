@@ -578,15 +578,16 @@
                 const moles = compound.molarity * volumeLiters;
                 correctMass = moles * compound.mw;
 
-                // Reset step 2 inputs on navigation
-                document.getElementById('volume-input').value = compound.volume;
+                // Make all input fields for calculation empty
+                document.getElementById('volume-input').value = '';
                 document.getElementById('volume-liters').value = '';
-                document.getElementById('molarity-input').value = compound.molarity;
+                document.getElementById('molarity-input').value = '';
                 document.getElementById('volume-for-moles').value = '';
                 document.getElementById('moles-calc').value = '';
                 document.getElementById('moles-for-mass').value = '';
-                document.getElementById('mw-input').value = compound.mw;
+                document.getElementById('mw-input').value = '';
                 document.getElementById('mass-calc').value = '';
+                
                 document.getElementById('calculation-feedback').classList.add('hidden');
                 document.getElementById('next-btn-calc').classList.add('hidden');
             }
@@ -606,7 +607,8 @@
                 document.getElementById('solution-level').style.backgroundColor = compounds[selectedCompound].color;
                 document.getElementById('powder-particles').style.color = compounds[selectedCompound].powderColor;
                 resetStep4();
-                document.querySelector('input[name="q1"]:checked')?.click(); // Reset radio
+                const q1Radios = document.querySelectorAll('input[name="q1"]');
+                q1Radios.forEach(radio => radio.checked = false); // Reset radio
                 document.getElementById('q1-feedback').classList.add('hidden');
                 document.getElementById('next-btn-1').classList.add('hidden');
             }
@@ -616,7 +618,8 @@
                 document.getElementById('target-volume-display').textContent = compounds[selectedCompound].volume;
                 document.getElementById('final-solution').style.backgroundColor = compounds[selectedCompound].color;
                 updateFinalVolumeDisplay();
-                document.querySelector('input[name="q2"]:checked')?.click(); // Reset radio
+                const q2Radios = document.querySelectorAll('input[name="q2"]');
+                q2Radios.forEach(radio => radio.checked = false); // Reset radio
                 document.getElementById('q2-feedback').classList.add('hidden');
                 document.getElementById('next-btn-2').classList.add('hidden');
             }
@@ -641,31 +644,43 @@
             let tempScore = 0;
             let feedbackText = '<strong>สรุปคะแนน:</strong><br>';
             
-            if (vLitersCorrect) {
-                tempScore++;
-                feedbackText += '✅ คำนวณปริมาตรเป็นลิตรถูกต้อง (+1 คะแนน)<br>';
-            } else {
-                feedbackText += '❌ คำนวณปริมาตรเป็นลิตรยังไม่ถูกต้อง<br>';
-            }
+            // Check each input individually
+            const volumeInput = parseFloat(document.getElementById('volume-input').value);
+            const volumeLitersInput = parseFloat(document.getElementById('volume-liters').value);
+            const molarityInput = parseFloat(document.getElementById('molarity-input').value);
+            const volumeForMolesInput = parseFloat(document.getElementById('volume-for-moles').value);
+            const molesCalcInput = parseFloat(document.getElementById('moles-calc').value);
+            const molesForMassInput = parseFloat(document.getElementById('moles-for-mass').value);
+            const mwInput = parseFloat(document.getElementById('mw-input').value);
+            const massCalcInput = parseFloat(document.getElementById('mass-calc').value);
 
-            if (molesCorrect) {
-                tempScore++;
-                feedbackText += '✅ คำนวณจำนวนโมลถูกต้อง (+1 คะแนน)<br>';
-            } else {
-                feedbackText += '❌ คำนวณจำนวนโมลยังไม่ถูกต้อง<br>';
-            }
+            // Logic to check each box
+            const checkVolML = !isNaN(volumeInput) && volumeInput === compound.volume;
+            const checkVolLiters = !isNaN(volumeLitersInput) && Math.abs(volumeLitersInput - volumeLiters) < 0.001;
+            const checkMolarity = !isNaN(molarityInput) && molarityInput === compound.molarity;
+            const checkVolForMoles = !isNaN(volumeForMolesInput) && Math.abs(volumeForMolesInput - volumeLiters) < 0.001;
+            const checkMolesCalc = !isNaN(molesCalcInput) && Math.abs(molesCalcInput - moles) < 0.0001;
+            const checkMolesForMass = !isNaN(molesForMassInput) && Math.abs(molesForMassInput - moles) < 0.0001;
+            const checkMw = !isNaN(mwInput) && mwInput === compound.mw;
+            const checkMassCalc = !isNaN(massCalcInput) && Math.abs(massCalcInput - calculatedMass) < 0.01;
 
-            if (massCorrect) {
-                tempScore++;
-                feedbackText += '✅ คำนวณมวลสารถูกต้อง (+1 คะแนน)';
-            } else {
-                feedbackText += '❌ คำนวณมวลสารยังไม่ถูกต้อง';
-            }
+            let numCorrect = 0;
+            if (checkVolML) numCorrect++;
+            if (checkVolLiters) numCorrect++;
+            if (checkMolarity) numCorrect++;
+            if (checkVolForMoles) numCorrect++;
+            if (checkMolesCalc) numCorrect++;
+            if (checkMolesForMass) numCorrect++;
+            if (checkMw) numCorrect++;
+            if (checkMassCalc) numCorrect++;
+            
+            score = numCorrect;
 
-            score = tempScore;
+            feedbackText = `<strong>สรุปผล:</strong> คุณตอบถูก ${numCorrect} จากทั้งหมด 8 ช่อง`;
             
             feedbackEl.innerHTML = `<div class="bg-green-100 text-green-700 p-3 rounded-lg">${feedbackText}</div>`;
             feedbackEl.classList.remove('hidden');
+
             document.getElementById('next-btn-calc').classList.remove('hidden');
         }
 
@@ -778,11 +793,10 @@
                 if (userAnswer === correctValue) {
                     feedbackEl.innerHTML = '<div class="bg-green-100 text-green-700 p-3 rounded-lg"><p class="font-semibold">✅ ถูกต้อง! (+1 คะแนน)</p></div>';
                     score += 1;
-                    document.getElementById('next-btn-1').classList.remove('hidden');
                 } else {
                     feedbackEl.innerHTML = '<div class="bg-red-100 text-red-700 p-3 rounded-lg"><p class="font-semibold">❌ ยังไม่ถูกต้อง ลองดูขั้นตอนอีกครั้ง</p></div>';
-                    document.getElementById('next-btn-1').classList.add('hidden');
                 }
+                document.getElementById('next-btn-1').classList.remove('hidden');
             } else if (questionNumber === 2) {
                 feedbackEl = document.getElementById('q2-feedback');
                 correctValue = 'a';
@@ -790,11 +804,10 @@
                 if (userAnswer === correctValue) {
                     feedbackEl.innerHTML = '<div class="bg-green-100 text-green-700 p-3 rounded-lg"><p class="font-semibold">✅ ถูกต้อง! (+1 คะแนน)</p></div>';
                     score += 1;
-                    document.getElementById('next-btn-2').classList.remove('hidden');
                 } else {
                     feedbackEl.innerHTML = '<div class="bg-red-100 text-red-700 p-3 rounded-lg"><p class="font-semibold">❌ ยังไม่ถูกต้อง ลองพิจารณาหน้าที่ของขวดวัดปริมาตรดูอีกครั้ง</p></div>';
-                    document.getElementById('next-btn-2').classList.add('hidden');
                 }
+                document.getElementById('next-btn-2').classList.remove('hidden');
             }
             feedbackEl.classList.remove('hidden');
         }
