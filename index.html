@@ -31,6 +31,19 @@
             border: 2px solid #374151;
             border-radius: 10px 10px 5px 5px;
             position: relative;
+            transform-origin: bottom;
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .measuring-cylinder.shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite;
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0) rotate(-1deg); }
+            20%, 80% { transform: translate3d(2px, 0, 0) rotate(2deg); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0) rotate(-4deg); }
+            40%, 60% { transform: translate3d(4px, 0, 0) rotate(4deg); }
         }
         
         .scale-mark {
@@ -40,15 +53,16 @@
             right: 0;
         }
         
-        .powder {
+        .powder-particle {
             border-radius: 50%;
             position: absolute;
             animation: fall 1.5s forwards;
+            background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
         }
         
         @keyframes fall {
             from { transform: translateY(0); opacity: 1; }
-            to { transform: translateY(120px); opacity: 0; }
+            to { transform: translateY(120px); opacity: 1; }
         }
         
         .stirring-rod {
@@ -61,6 +75,7 @@
             height: 96px;
             left: 50%;
             transform: translateX(-50%) rotate(0deg);
+            bottom: 30%;
         }
         
         .stirring-rod.active {
@@ -69,8 +84,29 @@
         
         @keyframes stir {
             0% { transform: translateX(-50%) translateY(0) rotate(-10deg); }
-            50% { transform: translateX(-50%) translateY(0) rotate(10deg); }
+            50% { transform: translateX(-50%) translateY(-5px) rotate(10deg); }
             100% { transform: translateX(-50%) translateY(0) rotate(-10deg); }
+        }
+
+        /* Modal specific styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
@@ -274,7 +310,7 @@
                                 </div>
                                 <div class="relative">
                                     <div class="beaker w-32 h-40 mx-auto mb-4 relative">
-                                        <div id="solution-level" class="solution bg-blue-200" style="height: 30%;"></div>
+                                        <div id="solution-level" class="solution bg-blue-200" style="height: 0%;"></div>
                                         <div id="powder-particles" class="absolute inset-0"></div>
                                         
                                         <div id="stirring-rod" class="stirring-rod absolute w-2 h-24 left-1/2 transform -translate-x-1/2 -top-4"></div>
@@ -283,14 +319,14 @@
                                     <div id="dissolving-status" class="text-center text-gray-600 mb-4">เริ่มละลายสาร</div>
                                     
                                     <div class="grid grid-cols-3 gap-2">
-                                        <button onclick="stirSolution()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
-                                            🥄 คน
+                                        <button id="add-salt-btn" onclick="addSalt()" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                            🧂 เติมสาร
                                         </button>
-                                        <button onclick="addWater()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                        <button id="add-water-btn" onclick="addWater()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors" disabled>
                                             💧 เติมน้ำ
                                         </button>
-                                        <button onclick="addSalt()" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
-                                            🧂 เติมสาร
+                                        <button id="stir-solution-btn" onclick="stirSolution()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors" disabled>
+                                            🥄 คน
                                         </button>
                                     </div>
                                 </div>
@@ -350,7 +386,7 @@
                                     จากนั้นตอบคำถามด้านขวาตามที่สังเกตได้
                                 </div>
                                 <div class="relative">
-                                    <div class="measuring-cylinder w-24 h-48 mx-auto mb-4 relative">
+                                    <div id="volumetric-flask" class="measuring-cylinder w-24 h-48 mx-auto mb-4 relative">
                                         <div id="final-solution" class="solution bg-blue-200" style="height: 0%;"></div>
                                         
                                         <div class="scale-mark" style="top: 20%;"></div>
@@ -386,7 +422,7 @@
                                         <button onclick="addMoreWater()" class="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
                                             💧 เติมน้ำ
                                         </button>
-                                        <button onclick="finalMix()" class="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
+                                        <button id="final-mix-btn" onclick="finalMix()" class="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded text-sm font-semibold transition-colors">
                                             🌀 คนผสม
                                         </button>
                                     </div>
@@ -435,22 +471,25 @@
                     </div>
                 </div>
 
-                <div id="completion" class="step-content hidden">
-                    <div class="text-center py-12">
-                        <div class="text-6xl mb-4">🎉</div>
-                        <h2 class="text-3xl font-bold text-green-600 mb-4">เยี่ยมมาก! เตรียมสารละลายสำเร็จ</h2>
-                        <div class="bg-green-50 p-6 rounded-xl max-w-md mx-auto mb-6">
-                            <h3 class="text-xl font-semibold mb-4">ผลลัพธ์</h3>
-                            <div id="final-results" class="space-y-2 text-left"></div>
-                            <div id="score-display" class="mt-4 p-4 bg-yellow-100 rounded-lg">
-                                <div class="text-lg font-semibold">คะแนนรวม: <span id="total-score">0</span>/2</div>
+                <div id="completion-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="text-center py-6">
+                            <div class="text-6xl mb-4">🎉</div>
+                            <h2 class="text-3xl font-bold text-green-600 mb-4">เยี่ยมมาก! เตรียมสารละลายสำเร็จ</h2>
+                            <div class="bg-green-50 p-6 rounded-xl max-w-md mx-auto mb-6">
+                                <h3 class="text-xl font-semibold mb-4">ผลลัพธ์</h3>
+                                <div id="final-results" class="space-y-2 text-left"></div>
+                                <div id="score-display" class="mt-4 p-4 bg-yellow-100 rounded-lg">
+                                    <div class="text-lg font-semibold">คะแนนรวม: <span id="total-score">0</span>/5</div>
+                                </div>
                             </div>
+                            <button onclick="resetGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
+                                🔄 เริ่มใหม่
+                            </button>
                         </div>
-                        <button onclick="resetGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
-                            🔄 เริ่มใหม่
-                        </button>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -509,9 +548,7 @@
         let correctMass = 0;
         let currentMass = 0;
         let score = 0;
-        let q1Correct = false;
-        let q2Correct = false;
-
+        
         const totalSteps = 5;
 
         function updateProblem() {
@@ -521,314 +558,323 @@
             document.getElementById('display-molarity').textContent = `${compound.molarity} M`;
             document.getElementById('display-volume').textContent = `${compound.volume} mL`;
             document.getElementById('compound-details').textContent = `${selectedCompound} มีมวลโมเลกุล = ${compound.mw} g/mol`;
-            
-            document.getElementById('volume-input').value = compound.volume;
-            document.getElementById('volume-liters').value = (compound.volume / 1000).toFixed(3);
-            document.getElementById('molarity-input').value = compound.molarity;
-            document.getElementById('volume-for-moles').value = (compound.volume / 1000).toFixed(3);
-            document.getElementById('mw-input').value = compound.mw;
-
-            correctMass = compound.molarity * (compound.volume / 1000) * compound.mw;
-            document.getElementById('required-mass').textContent = correctMass.toFixed(2);
-            
-            currentMass = 0;
-            document.getElementById('scale-display').textContent = '0.00 g';
-            document.getElementById('weighing-progress').style.width = '0%';
-            document.getElementById('weighing-status').textContent = 'เริ่มชั่งสาร';
-            document.getElementById('powder-on-scale').style.opacity = '0';
         }
 
         function nextStep(step) {
-            document.getElementById(`step-${currentStep}`).classList.add('hidden');
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step-${step}`).classList.remove('hidden');
             currentStep = step;
-            document.getElementById(`step-${currentStep}`).classList.remove('hidden');
+            document.getElementById('progress-bar').style.width = `${(step / totalSteps) * 100}%`;
+            document.getElementById('progress-text').textContent = `ขั้นตอนที่ ${step}/${totalSteps}`;
             
-            const progress = (currentStep / totalSteps) * 100;
-            document.getElementById('progress-bar').style.width = `${progress}%`;
-            document.getElementById('progress-text').textContent = `ขั้นตอนที่ ${currentStep}/${totalSteps}`;
-            
-            if (currentStep === 3) {
-                document.getElementById('required-mass').textContent = correctMass.toFixed(2);
-            }
-            if (currentStep === 5) {
+            if (step === 2) {
                 const compound = compounds[selectedCompound];
-                document.getElementById('target-volume-label').textContent = compound.volume;
-                document.getElementById('target-volume-display').textContent = compound.volume;
+                document.getElementById('calc-compound').textContent = selectedCompound;
+                document.getElementById('calc-molarity').textContent = compound.molarity;
+                document.getElementById('calc-volume').textContent = compound.volume;
+                document.getElementById('calc-mw').textContent = compound.mw;
+                
+                const volumeLiters = compound.volume / 1000;
+                const moles = compound.molarity * volumeLiters;
+                correctMass = moles * compound.mw;
+
+                // Reset step 2 inputs on navigation
+                document.getElementById('volume-input').value = compound.volume;
+                document.getElementById('volume-liters').value = '';
+                document.getElementById('molarity-input').value = compound.molarity;
+                document.getElementById('volume-for-moles').value = '';
+                document.getElementById('moles-calc').value = '';
+                document.getElementById('moles-for-mass').value = '';
+                document.getElementById('mw-input').value = compound.mw;
+                document.getElementById('mass-calc').value = '';
+                document.getElementById('calculation-feedback').classList.add('hidden');
+                document.getElementById('next-btn-calc').classList.add('hidden');
+            }
+            
+            if (step === 3) {
+                const compound = compounds[selectedCompound];
+                document.getElementById('required-mass').textContent = correctMass.toFixed(2);
+                document.getElementById('weighing-progress').style.width = '0%';
+                document.getElementById('scale-display').textContent = '0.00 g';
+                document.getElementById('weighing-status').textContent = 'เริ่มชั่งสาร';
+                document.getElementById('powder-on-scale').style.opacity = '0';
+                document.getElementById('next-btn-weighing').classList.add('hidden');
+                currentMass = 0;
+            }
+
+            if (step === 4) {
+                document.getElementById('solution-level').style.backgroundColor = compounds[selectedCompound].color;
+                document.getElementById('powder-particles').style.color = compounds[selectedCompound].powderColor;
+                resetStep4();
+                document.querySelector('input[name="q1"]:checked')?.click(); // Reset radio
+                document.getElementById('q1-feedback').classList.add('hidden');
+                document.getElementById('next-btn-1').classList.add('hidden');
+            }
+
+            if (step === 5) {
+                document.getElementById('target-volume-label').textContent = compounds[selectedCompound].volume;
+                document.getElementById('target-volume-display').textContent = compounds[selectedCompound].volume;
+                document.getElementById('final-solution').style.backgroundColor = compounds[selectedCompound].color;
+                updateFinalVolumeDisplay();
+                document.querySelector('input[name="q2"]:checked')?.click(); // Reset radio
+                document.getElementById('q2-feedback').classList.add('hidden');
+                document.getElementById('next-btn-2').classList.add('hidden');
             }
         }
 
         function previousStep(step) {
-            document.getElementById(`step-${currentStep}`).classList.add('hidden');
-            currentStep = step;
-            document.getElementById(`step-${currentStep}`).classList.remove('hidden');
-            
-            const progress = (currentStep / totalSteps) * 100;
-            document.getElementById('progress-bar').style.width = `${progress}%`;
-            document.getElementById('progress-text').textContent = `ขั้นตอนที่ ${currentStep}/${totalSteps}`;
+            nextStep(step);
         }
-        
+
         function checkCalculation() {
             const compound = compounds[selectedCompound];
             const volumeLiters = compound.volume / 1000;
             const moles = compound.molarity * volumeLiters;
-            const mass = moles * compound.mw;
-
-            const userVolumeLiters = parseFloat(document.getElementById('volume-liters').value);
-            const userMoles = parseFloat(document.getElementById('moles-calc').value);
-            const userMass = parseFloat(document.getElementById('mass-calc').value);
-
-            const tolerance = 0.01;
-            let isCorrect = true;
-            let feedback = '';
-
-            if (Math.abs(userVolumeLiters - volumeLiters) > tolerance) {
-                isCorrect = false;
-                feedback += `1. การแปลงปริมาตรเป็นลิตรไม่ถูกต้อง ควรเป็น ${(volumeLiters).toFixed(3)} L <br>`;
-            }
-            if (Math.abs(userMoles - moles) > tolerance) {
-                isCorrect = false;
-                feedback += `2. จำนวนโมลที่คำนวณไม่ถูกต้อง ควรเป็น ${(moles).toFixed(4)} mol <br>`;
-            }
-            if (Math.abs(userMass - mass) > tolerance) {
-                isCorrect = false;
-                feedback += `3. มวลสารที่คำนวณไม่ถูกต้อง ควรเป็น ${(mass).toFixed(2)} g <br>`;
-            }
+            const calculatedMass = moles * compound.mw;
+            
+            const vLitersCorrect = Math.abs(parseFloat(document.getElementById('volume-liters').value) - volumeLiters) < 0.001;
+            const molesCorrect = Math.abs(parseFloat(document.getElementById('moles-calc').value) - moles) < 0.0001;
+            const massCorrect = Math.abs(parseFloat(document.getElementById('mass-calc').value) - calculatedMass) < 0.01;
 
             const feedbackEl = document.getElementById('calculation-feedback');
-            if (isCorrect) {
-                feedbackEl.innerHTML = '<span class="text-green-600 font-semibold">ถูกต้อง! ไปขั้นตอนต่อไปได้เลย</span>';
-                feedbackEl.classList.remove('hidden', 'text-red-600');
-                feedbackEl.classList.add('text-green-600');
-                document.getElementById('next-btn-calc').classList.remove('hidden');
+            
+            let tempScore = 0;
+            let feedbackText = '<strong>สรุปคะแนน:</strong><br>';
+            
+            if (vLitersCorrect) {
+                tempScore++;
+                feedbackText += '✅ คำนวณปริมาตรเป็นลิตรถูกต้อง (+1 คะแนน)<br>';
             } else {
-                feedbackEl.innerHTML = `<span class="text-red-600 font-semibold">คำตอบยังไม่ถูกต้อง:</span> <br>${feedback}`;
-                feedbackEl.classList.remove('hidden', 'text-green-600');
-                feedbackEl.classList.add('text-red-600');
-                document.getElementById('next-btn-calc').classList.add('hidden');
+                feedbackText += '❌ คำนวณปริมาตรเป็นลิตรยังไม่ถูกต้อง<br>';
             }
+
+            if (molesCorrect) {
+                tempScore++;
+                feedbackText += '✅ คำนวณจำนวนโมลถูกต้อง (+1 คะแนน)<br>';
+            } else {
+                feedbackText += '❌ คำนวณจำนวนโมลยังไม่ถูกต้อง<br>';
+            }
+
+            if (massCorrect) {
+                tempScore++;
+                feedbackText += '✅ คำนวณมวลสารถูกต้อง (+1 คะแนน)';
+            } else {
+                feedbackText += '❌ คำนวณมวลสารยังไม่ถูกต้อง';
+            }
+
+            score = tempScore;
+            
+            feedbackEl.innerHTML = `<div class="bg-green-100 text-green-700 p-3 rounded-lg">${feedbackText}</div>`;
+            feedbackEl.classList.remove('hidden');
+            document.getElementById('next-btn-calc').classList.remove('hidden');
         }
 
         function addPowder() {
-            if (currentMass < correctMass) {
-                currentMass += Math.random() * 5 + 1;
-                if (currentMass > correctMass) {
-                    currentMass = correctMass + (Math.random() * 0.1);
-                }
-                
-                const progress = (currentMass / correctMass) * 100;
-                document.getElementById('scale-display').textContent = `${currentMass.toFixed(2)} g`;
-                document.getElementById('weighing-progress').style.width = `${progress}%`;
-                document.getElementById('powder-on-scale').style.opacity = '1';
-                
-                if (Math.abs(currentMass - correctMass) <= 0.1) {
-                    document.getElementById('weighing-status').textContent = 'ชั่งได้ปริมาณที่ถูกต้องแล้ว!';
-                    document.getElementById('weighing-progress').classList.remove('bg-green-500');
-                    document.getElementById('weighing-progress').classList.add('bg-blue-500');
-                    document.getElementById('next-btn-weighing').classList.remove('hidden');
-                } else {
-                    document.getElementById('weighing-status').textContent = 'กำลังชั่งสาร...';
-                }
-            } else {
-                document.getElementById('weighing-status').textContent = 'ชั่งสารเสร็จสิ้นแล้ว';
-            }
-        }
-        
-        function addSalt() {
-            const powderParticles = document.getElementById('powder-particles');
-            const compound = compounds[selectedCompound];
-            powderParticles.innerHTML = '';
-            
-            for (let i = 0; i < 15; i++) {
-                const particle = document.createElement('div');
-                particle.classList.add('powder');
-                particle.style.background = compound.powderColor;
-                particle.style.width = `${Math.random() * 10 + 5}px`;
-                particle.style.height = particle.style.width;
-                
-                particle.style.left = `${Math.random() * 60 + 20}%`;
-                particle.style.top = `${Math.random() * 10 + 20}%`; 
-
-                const animationName = `fall-${Date.now()}-${i}`;
-                const keyframes = `
-                    @keyframes ${animationName} {
-                        0% { transform: translateY(0); opacity: 1; }
-                        100% { transform: translateY(120px); opacity: 0; }
-                    }
-                `;
-                const styleSheet = document.createElement("style");
-                styleSheet.innerHTML = keyframes;
-                document.head.appendChild(styleSheet);
-                particle.style.animation = `${animationName} 1.5s forwards`;
-
-                powderParticles.appendChild(particle);
-            }
-            
-            document.getElementById('dissolving-status').textContent = 'เติมผงสารแล้ว!';
-        }
-        
-        function stirSolution() {
-            const stirringRod = document.getElementById('stirring-rod');
-            const dissolvingStatus = document.getElementById('dissolving-status');
-            const powderParticles = document.getElementById('powder-particles');
-            
-            stirringRod.style.top = '70%'; 
-            stirringRod.classList.add('active');
-
-            dissolvingStatus.textContent = 'กำลังคนสาร...';
-            
-            powderParticles.style.transition = 'opacity 2s ease-in-out';
-            powderParticles.style.opacity = '0';
-            
-            setTimeout(() => {
-                stirringRod.classList.remove('active');
-                stirringRod.style.top = '-4rem'; 
-                dissolvingStatus.textContent = 'สารละลายเป็นเนื้อเดียวกันแล้ว!';
-                powderParticles.innerHTML = '';
-                powderParticles.style.opacity = '1';
-                document.getElementById('next-btn-1').classList.remove('hidden');
-            }, 2000);
-        }
-
-        function addWater() {
-            const solutionLevel = document.getElementById('solution-level');
-            const compound = compounds[selectedCompound];
-            let currentHeight = parseInt(solutionLevel.style.height);
-            if (currentHeight < 70) {
-                currentHeight += 10;
-                solutionLevel.style.height = `${currentHeight}%`;
-                solutionLevel.style.backgroundColor = compound.color; // Set solution color
-                document.getElementById('dissolving-status').textContent = `เติมน้ำเพิ่ม... (${currentHeight}%)`;
-            } else {
-                document.getElementById('dissolving-status').textContent = 'ไม่สามารถเติมน้ำในบีกเกอร์ได้อีกแล้ว!';
-            }
-        }
-        
-        function checkAnswer(questionNum) {
-            const answer = document.querySelector(`input[name="q${questionNum}"]:checked`);
-            const feedbackEl = document.getElementById(`q${questionNum}-feedback`);
-            if (!answer) {
-                feedbackEl.innerHTML = '<span class="text-red-600">กรุณาเลือกคำตอบก่อน</span>';
-                feedbackEl.classList.remove('hidden');
+            if (currentMass >= correctMass) {
+                document.getElementById('weighing-status').textContent = 'สารครบตามจำนวนที่ต้องการแล้ว';
+                document.getElementById('weighing-progress').style.width = '100%';
+                document.getElementById('next-btn-weighing').classList.remove('hidden');
                 return;
             }
             
-            if (questionNum === 1) {
-                if (answer.value === 'b') {
-                    feedbackEl.innerHTML = '<span class="text-green-600 font-semibold">ถูกต้อง!</span> <br>คำอธิบาย: ควรเติมสารก่อนแล้วจึงค่อยเติมน้ำเพื่อช่วยให้สารละลายได้ดีขึ้นก่อนที่จะคนให้เป็นเนื้อเดียวกัน';
-                    feedbackEl.classList.remove('hidden', 'text-red-600');
-                    feedbackEl.classList.add('text-green-600');
-                    if (!q1Correct) {
-                        q1Correct = true;
-                        score++;
-                    }
-                } else {
-                    feedbackEl.innerHTML = '<span class="text-red-600 font-semibold">ยังไม่ถูกต้อง</span> <br>ลองดูการจำลองอีกครั้งและคิดถึงขั้นตอนที่ถูกต้องในการเตรียมสารละลาย';
-                    feedbackEl.classList.remove('hidden', 'text-green-600');
-                    feedbackEl.classList.add('text-red-600');
-                    q1Correct = false;
-                }
-            } else if (questionNum === 2) {
-                if (answer.value === 'a') {
-                    feedbackEl.innerHTML = '<span class="text-green-600 font-semibold">ถูกต้อง!</span> <br>คำอธิบาย: Volumetric Flask ถูกออกแบบมาให้มีปริมาตรที่แม่นยำมากที่สุดสำหรับปริมาตรที่กำหนด';
-                    feedbackEl.classList.remove('hidden', 'text-red-600');
-                    feedbackEl.classList.add('text-green-600');
-                    if (!q2Correct) {
-                        q2Correct = true;
-                        score++;
-                    }
-                } else {
-                    feedbackEl.innerHTML = '<span class="text-red-600 font-semibold">ยังไม่ถูกต้อง</span> <br>ลองดูการจำลองอีกครั้งและคิดถึงวัตถุประสงค์หลักของอุปกรณ์นี้';
-                    feedbackEl.classList.remove('hidden', 'text-green-600');
-                    feedbackEl.classList.add('text-red-600');
-                    q2Correct = false;
-                }
+            const addedMass = (Math.random() * 0.5) + 0.5;
+            currentMass += addedMass;
+            if (currentMass > correctMass) {
+                currentMass = correctMass;
             }
+
+            const percentage = (currentMass / correctMass) * 100;
+            document.getElementById('scale-display').textContent = `${currentMass.toFixed(2)} g`;
+            document.getElementById('weighing-progress').style.width = `${percentage}%`;
             
+            document.getElementById('powder-on-scale').style.opacity = '1';
+            document.getElementById('weighing-status').textContent = `ชั่งสารได้ ${currentMass.toFixed(2)} g`;
+
+            if (currentMass >= correctMass) {
+                document.getElementById('weighing-status').textContent = 'ชั่งสารได้ครบตามจำนวนที่ต้องการแล้ว!';
+                document.getElementById('next-btn-weighing').classList.remove('hidden');
+            }
+        }
+        
+        let powderAdded = false;
+
+        function resetStep4() {
+            powderAdded = false;
+            document.getElementById('solution-level').style.height = '0%';
+            document.getElementById('powder-particles').innerHTML = '';
+            document.getElementById('add-salt-btn').disabled = false;
+            document.getElementById('add-water-btn').disabled = true;
+            document.getElementById('stir-solution-btn').disabled = true;
+            document.getElementById('dissolving-status').textContent = 'เริ่มละลายสาร';
         }
 
-        let finalVolume = 0;
+        function addSalt() {
+            if (powderAdded) return;
+            
+            const powderContainer = document.getElementById('powder-particles');
+            const powderColor = compounds[selectedCompound].powderColor;
+
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('powder-particle');
+                particle.style.width = `${Math.random() * 5 + 3}px`;
+                particle.style.height = particle.style.width;
+                particle.style.left = `${Math.random() * 80 + 10}%`;
+                particle.style.top = `-20px`;
+                powderContainer.appendChild(particle);
+
+                setTimeout(() => {
+                    particle.style.transform = 'translateY(100px)';
+                    particle.style.transition = 'transform 1.5s ease-in';
+                }, i * 50); 
+            }
+            powderAdded = true;
+            document.getElementById('dissolving-status').textContent = 'เติมผงสารลงไปแล้ว';
+            document.getElementById('add-salt-btn').disabled = true;
+            document.getElementById('add-water-btn').disabled = false;
+        }
+
+        function addWater() {
+            if (!powderAdded) {
+                document.getElementById('dissolving-status').textContent = 'ต้องเติมสารก่อน!';
+                return;
+            }
+            document.getElementById('solution-level').style.height = `55%`;
+            document.getElementById('dissolving-status').textContent = `เติมน้ำลงไปแล้ว`;
+            document.getElementById('add-water-btn').disabled = true;
+            document.getElementById('stir-solution-btn').disabled = false;
+        }
+
+        function stirSolution() {
+            const stirringRod = document.getElementById('stirring-rod');
+            if (stirringRod.classList.contains('active')) {
+                return;
+            }
+
+            stirringRod.classList.add('active');
+            document.getElementById('dissolving-status').textContent = 'กำลังคนสาร...';
+
+            const powderParticles = document.querySelectorAll('.powder-particle');
+            powderParticles.forEach((particle, index) => {
+                setTimeout(() => {
+                    particle.style.transition = 'opacity 1s ease-out';
+                    particle.style.opacity = '0';
+                    particle.style.display = 'none';
+                }, index * 50 + 1000);
+            });
+            
+            setTimeout(() => {
+                stirringRod.classList.remove('active');
+                document.getElementById('dissolving-status').textContent = 'สารละลายหมดแล้ว';
+            }, 3000);
+        }
+
+        function checkAnswer(questionNumber) {
+            let feedbackEl, correctValue;
+            if (questionNumber === 1) {
+                feedbackEl = document.getElementById('q1-feedback');
+                correctValue = 'b';
+                const userAnswer = document.querySelector('input[name="q1"]:checked')?.value;
+                if (userAnswer === correctValue) {
+                    feedbackEl.innerHTML = '<div class="bg-green-100 text-green-700 p-3 rounded-lg"><p class="font-semibold">✅ ถูกต้อง! (+1 คะแนน)</p></div>';
+                    score += 1;
+                    document.getElementById('next-btn-1').classList.remove('hidden');
+                } else {
+                    feedbackEl.innerHTML = '<div class="bg-red-100 text-red-700 p-3 rounded-lg"><p class="font-semibold">❌ ยังไม่ถูกต้อง ลองดูขั้นตอนอีกครั้ง</p></div>';
+                    document.getElementById('next-btn-1').classList.add('hidden');
+                }
+            } else if (questionNumber === 2) {
+                feedbackEl = document.getElementById('q2-feedback');
+                correctValue = 'a';
+                const userAnswer = document.querySelector('input[name="q2"]:checked')?.value;
+                if (userAnswer === correctValue) {
+                    feedbackEl.innerHTML = '<div class="bg-green-100 text-green-700 p-3 rounded-lg"><p class="font-semibold">✅ ถูกต้อง! (+1 คะแนน)</p></div>';
+                    score += 1;
+                    document.getElementById('next-btn-2').classList.remove('hidden');
+                } else {
+                    feedbackEl.innerHTML = '<div class="bg-red-100 text-red-700 p-3 rounded-lg"><p class="font-semibold">❌ ยังไม่ถูกต้อง ลองพิจารณาหน้าที่ของขวดวัดปริมาตรดูอีกครั้ง</p></div>';
+                    document.getElementById('next-btn-2').classList.add('hidden');
+                }
+            }
+            feedbackEl.classList.remove('hidden');
+        }
+        
+        let currentVolume = 0;
+        let targetVolume = 0;
+        let transferred = false;
+        let volumeCorrect = false;
+
         function transferSolution() {
-            const compound = compounds[selectedCompound];
-            document.getElementById('final-solution').style.height = '30%';
-            document.getElementById('final-solution').style.backgroundColor = compound.color;
-            document.getElementById('current-volume').textContent = (compound.volume * 0.3).toFixed(0);
-            document.getElementById('final-status').textContent = 'ย้ายสารละลายลงใน Volumetric Flask แล้ว';
-        }
-
-        function addMoreWater() {
-            const targetVolume = compounds[selectedCompound].volume;
-            let currentVolume = parseFloat(document.getElementById('current-volume').textContent);
-            let increment = Math.random() * 50 + 20; 
-            const compound = compounds[selectedCompound];
-            
-            if (currentVolume < targetVolume) {
-                currentVolume += increment;
-                if (currentVolume > targetVolume) {
-                    currentVolume = targetVolume;
-                }
-                const heightPercentage = (currentVolume / targetVolume) * 100;
-                document.getElementById('final-solution').style.height = `${heightPercentage}%`;
-                document.getElementById('final-solution').style.backgroundColor = compound.color;
-                document.getElementById('current-volume').textContent = currentVolume.toFixed(0);
-                document.getElementById('final-status').textContent = `กำลังเติมน้ำ...`;
+            if (!transferred) {
+                document.getElementById('final-status').textContent = 'ย้ายสารละลายลงในขวดวัดปริมาตร';
+                currentVolume = compounds[selectedCompound].volume * 0.8;
+                targetVolume = compounds[selectedCompound].volume;
+                updateFinalVolumeDisplay();
+                transferred = true;
             } else {
-                document.getElementById('final-status').textContent = 'ไม่สามารถเติมน้ำเพิ่มได้แล้ว!';
+                document.getElementById('final-status').textContent = 'ย้ายสารละลายไปแล้ว';
             }
-            
-            if (Math.abs(currentVolume - targetVolume) < 5) {
+        }
+        
+        function addMoreWater() {
+            if (transferred) {
+                document.getElementById('final-status').textContent = 'กำลังปรับปริมาตร...';
+                currentVolume = targetVolume;
+                updateFinalVolumeDisplay();
                 document.getElementById('meniscus-line').style.opacity = '1';
-                document.getElementById('final-status').textContent = 'เติมน้ำใกล้ถึงขีดบอกปริมาตรแล้ว!';
+                volumeCorrect = true;
+            } else {
+                document.getElementById('final-status').textContent = 'ต้องย้ายสารละลายก่อน!';
             }
-            
-            if (Math.abs(currentVolume - targetVolume) < 1) {
-                document.getElementById('final-status').textContent = 'ปรับปริมาตรได้สมบูรณ์แล้ว!';
-                document.getElementById('next-btn-2').classList.remove('hidden');
+        }
+        
+        function finalMix() {
+            if (volumeCorrect) {
+                const flask = document.getElementById('volumetric-flask');
+                const solution = document.getElementById('final-solution');
+                const finalStatus = document.getElementById('final-status');
+                const finalMixBtn = document.getElementById('final-mix-btn');
+
+                flask.classList.add('shake');
+                solution.style.backgroundColor = '#87CEEB';
+                finalStatus.textContent = 'ปิดจุกแล้วเขย่าเพื่อให้สารละลายเข้ากันดี';
+
+                setTimeout(() => {
+                    flask.classList.remove('shake');
+                    finalStatus.textContent = 'พร้อมใช้งาน';
+                    finalMixBtn.disabled = true;
+                }, 1000); 
+
+            } else {
+                document.getElementById('final-status').textContent = 'ต้องปรับปริมาตรให้ถึงขีดบอกปริมาตรก่อน!';
             }
-            
-            finalVolume = currentVolume;
         }
 
-        function finalMix() {
-            document.getElementById('final-status').textContent = 'ผสมสารละลายขั้นสุดท้ายแล้ว!';
+        function updateFinalVolumeDisplay() {
+            const heightPercentage = (currentVolume / compounds[selectedCompound].volume) * 80;
+            document.getElementById('final-solution').style.height = `${heightPercentage}%`;
+            document.getElementById('current-volume').textContent = currentVolume.toFixed(0);
+            document.getElementById('target-volume-display').textContent = targetVolume;
         }
 
         function showCompletion() {
-            document.getElementById(`step-${currentStep}`).classList.add('hidden');
-            document.getElementById('completion').classList.remove('hidden');
-            
-            const compound = compounds[selectedCompound];
-            const finalResults = document.getElementById('final-results');
-            finalResults.innerHTML = `
-                <p>✅ สารประกอบ: <span class="font-semibold">${selectedCompound}</span></p>
-                <p>✅ ความเข้มข้นที่เตรียมได้: <span class="font-semibold">${compound.molarity} M</span></p>
-                <p>✅ ปริมาตรสุดท้าย: <span class="font-semibold">${finalVolume.toFixed(2)} mL</span> (เป้าหมาย: ${compound.volume} mL)</p>
+            const finalResultsEl = document.getElementById('final-results');
+            finalResultsEl.innerHTML = `
+                <p><strong>สารที่เตรียม:</strong> ${compounds[selectedCompound].name} (${selectedCompound})</p>
+                <p><strong>ความเข้มข้น:</strong> ${compounds[selectedCompound].molarity} M</p>
+                <p><strong>ปริมาตร:</strong> ${compounds[selectedCompound].volume} mL</p>
+                <p><strong>มวลสารที่ใช้:</strong> ${correctMass.toFixed(2)} g</p>
             `;
-            
             document.getElementById('total-score').textContent = score;
+            document.getElementById('completion-modal').classList.remove('hidden');
         }
 
         function resetGame() {
-            currentStep = 1;
-            score = 0;
-            q1Correct = false;
-            q2Correct = false;
-            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById('step-1').classList.remove('hidden');
-            updateProblem();
-            
-            document.getElementById('next-btn-calc').classList.add('hidden');
-            document.getElementById('next-btn-weighing').classList.add('hidden');
-            document.getElementById('next-btn-1').classList.add('hidden');
-            document.getElementById('next-btn-2').classList.add('hidden');
-            document.getElementById('calculation-feedback').classList.add('hidden');
-            document.getElementById('q1-feedback').classList.add('hidden');
-            document.getElementById('q2-feedback').classList.add('hidden');
-            document.getElementById('meniscus-line').style.opacity = '0';
+            location.reload();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             updateProblem();
-            resetGame();
         });
     </script>
 </body>
