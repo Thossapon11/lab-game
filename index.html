@@ -634,53 +634,52 @@
             const volumeLiters = compound.volume / 1000;
             const moles = compound.molarity * volumeLiters;
             const calculatedMass = moles * compound.mw;
-            
-            const vLitersCorrect = Math.abs(parseFloat(document.getElementById('volume-liters').value) - volumeLiters) < 0.001;
-            const molesCorrect = Math.abs(parseFloat(document.getElementById('moles-calc').value) - moles) < 0.0001;
-            const massCorrect = Math.abs(parseFloat(document.getElementById('mass-calc').value) - calculatedMass) < 0.01;
 
             const feedbackEl = document.getElementById('calculation-feedback');
             
-            let tempScore = 0;
-            let feedbackText = '<strong>สรุปคะแนน:</strong><br>';
-            
-            // Check each input individually
+            let numCorrect = 0;
+
+            // Check each question separately and assign points
+            let q1Correct = false;
             const volumeInput = parseFloat(document.getElementById('volume-input').value);
             const volumeLitersInput = parseFloat(document.getElementById('volume-liters').value);
+            if (!isNaN(volumeInput) && volumeInput === compound.volume && !isNaN(volumeLitersInput) && Math.abs(volumeLitersInput - volumeLiters) < 0.001) {
+                q1Correct = true;
+                numCorrect++;
+            }
+
+            let q2Correct = false;
             const molarityInput = parseFloat(document.getElementById('molarity-input').value);
             const volumeForMolesInput = parseFloat(document.getElementById('volume-for-moles').value);
             const molesCalcInput = parseFloat(document.getElementById('moles-calc').value);
+            if (!isNaN(molarityInput) && molarityInput === compound.molarity && !isNaN(volumeForMolesInput) && Math.abs(volumeForMolesInput - volumeLiters) < 0.001 && !isNaN(molesCalcInput) && Math.abs(molesCalcInput - moles) < 0.0001) {
+                q2Correct = true;
+                numCorrect++;
+            }
+
+            let q3Correct = false;
             const molesForMassInput = parseFloat(document.getElementById('moles-for-mass').value);
             const mwInput = parseFloat(document.getElementById('mw-input').value);
             const massCalcInput = parseFloat(document.getElementById('mass-calc').value);
-
-            // Logic to check each box
-            const checkVolML = !isNaN(volumeInput) && volumeInput === compound.volume;
-            const checkVolLiters = !isNaN(volumeLitersInput) && Math.abs(volumeLitersInput - volumeLiters) < 0.001;
-            const checkMolarity = !isNaN(molarityInput) && molarityInput === compound.molarity;
-            const checkVolForMoles = !isNaN(volumeForMolesInput) && Math.abs(volumeForMolesInput - volumeLiters) < 0.001;
-            const checkMolesCalc = !isNaN(molesCalcInput) && Math.abs(molesCalcInput - moles) < 0.0001;
-            const checkMolesForMass = !isNaN(molesForMassInput) && Math.abs(molesForMassInput - moles) < 0.0001;
-            const checkMw = !isNaN(mwInput) && mwInput === compound.mw;
-            const checkMassCalc = !isNaN(massCalcInput) && Math.abs(massCalcInput - calculatedMass) < 0.01;
-
-            let numCorrect = 0;
-            if (checkVolML) numCorrect++;
-            if (checkVolLiters) numCorrect++;
-            if (checkMolarity) numCorrect++;
-            if (checkVolForMoles) numCorrect++;
-            if (checkMolesCalc) numCorrect++;
-            if (checkMolesForMass) numCorrect++;
-            if (checkMw) numCorrect++;
-            if (checkMassCalc) numCorrect++;
+            if (!isNaN(molesForMassInput) && Math.abs(molesForMassInput - moles) < 0.0001 && !isNaN(mwInput) && mwInput === compound.mw && !isNaN(massCalcInput) && Math.abs(massCalcInput - calculatedMass) < 0.01) {
+                q3Correct = true;
+                numCorrect++;
+            }
             
             score = numCorrect;
 
-            feedbackText = `<strong>สรุปผล:</strong> คุณตอบถูก ${numCorrect} จากทั้งหมด 8 ช่อง`;
-            
-            feedbackEl.innerHTML = `<div class="bg-green-100 text-green-700 p-3 rounded-lg">${feedbackText}</div>`;
-            feedbackEl.classList.remove('hidden');
+            let feedbackClass = '';
+            let feedbackText = '';
+            if (numCorrect === 3) {
+                feedbackClass = 'bg-green-100 text-green-700';
+                feedbackText = `<strong>✅ ยอดเยี่ยม!</strong> คุณตอบถูกครบทั้ง 3 ข้อ`;
+            } else {
+                feedbackClass = 'bg-red-100 text-red-700';
+                feedbackText = `<strong>❌ ยังไม่ถูกต้อง</strong> คุณตอบถูก ${numCorrect} จากทั้งหมด 3 ข้อ`;
+            }
 
+            feedbackEl.innerHTML = `<div class="${feedbackClass} p-3 rounded-lg">${feedbackText}</div>`;
+            feedbackEl.classList.remove('hidden');
             document.getElementById('next-btn-calc').classList.remove('hidden');
         }
 
